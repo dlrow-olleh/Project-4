@@ -1,0 +1,129 @@
+import time
+from bs4 import BeautifulSoup
+import re
+import urllib.request
+from os.path import exists
+import html
+from pickle import dump, load
+
+links = []
+text = []
+url = 'https://bechdeltest.com/?list=all'
+
+def get_links(url, start_line, end_line):
+    links = []
+    newlinks = []
+    new_links = []
+    text = []
+    opensite = urllib.request.urlopen(url)
+    soup = BeautifulSoup(opensite, "html.parser")
+    for link in soup.findAll('a'):
+        links.append(link.get('href'))
+    links = (links[start_line:end_line:2])
+    for i in range(len(links)):
+        if links[i] != None:
+            newlinks.append(links[i])
+    for i in range(len(newlinks)):
+        if (newlinks[i][0] != 'h'):
+            new_links.append(newlinks[i])
+    return new_links
+
+def download_links(half_links):
+    useful_text = []
+    for i in half_links:
+        download_url = 'https://bechdeltest.com' + i
+        webpage = str(urllib.request.urlopen(download_url).read())
+        firstpos = webpage.find('<title>')
+        secondpos = webpage.find(' - Bechdel')
+        title = webpage[firstpos+7:secondpos + 1]
+        firstpos = webpage.find('This movie passed ')
+        secondpos = webpage.find(' of 3 tests')
+        pass_num = webpage[firstpos + 18:secondpos]
+        if pass_num == '3':
+            test = title + ': Passed'
+        else:
+            test = title + ': Failed'
+        useful_text.append(test)
+        time.sleep(1)
+    return useful_text
+
+def find_imdb_links(half_links):
+    imdb_links = []
+    for i in half_links:
+        download_url = 'https://bechdeltest.com' + i
+        webpage = str(urllib.request.urlopen(download_url).read())
+        firstpos = webpage.find('<a href="http://www.imdb.com')
+        secondpos = webpage.find('" style="text-decoration: none;">')
+        imdb_link = webpage[firstpos+9:secondpos]
+        imdb_links.append(imdb_link)
+        time.sleep(1)
+    return imdb_links
+
+def parse_imdb(list):
+    imdb_text = []
+    count = 0
+    imdb_data_set = []
+    for i in list:
+        webpage = str(urllib.request.urlopen(i).read())
+        imdb_text.append(webpage)
+        firstpos = webpage.find(') - IMDb</title>\\n')
+        year = webpage[firstpos-4:firstpos]
+        firstpos = webpage.find('<meta name="description" content="')
+        secondpos = webpage.find('<meta property="og:description"')
+        description = webpage[firstpos+34:secondpos-14]
+        firstpos = description.find('Directed by ')
+        secondpos = description.find('.  With')
+        director = description[firstpos+12:secondpos]
+        firstpos = webpage.find("content=\\\'IMDb\\\' />\\n")
+        secondpos = webpage.find('<meta name="description" content="')
+        movie = webpage[firstpos+53:secondpos-28]
+        firstpos = webpage.find('ratingValue')
+        if firstpos == -1:
+            rating = "No Rating"
+        else:
+            rating = webpage[firstpos+15:firstpos+18]
+        firstpos = webpage.find('Gross USA:</h4>')
+        secondpos = webpage.find(', <span class="attribute">')
+        if firstpos == -1:
+            gross_usa = 'Unknown'
+        elif secondpos == -1:
+            gross_usa = 'Unknown'
+        else:
+            if firstpos < secondpos:
+                gross_usa = webpage[firstpos + 16 :secondpos]
+            else:
+                secondpos = webpage.find(', <span class="attribute">20')
+                gross_usa = webpage[firstpos + 16: secondpos]
+                if len(gross_usa) > 12:
+                    gross_usa = gross_usa[0:12]
+                    if gross_usa[len(gross_usa)-1] == ',':
+                        gross_usa = gross_usa[0:11]
+                    elif gross_usa[len(gross_usa)-2] == ',':
+                        gross_usa = gross_usa[0:10]
+        imdb_data = movie + ' (' + year + '):' + ' Directed by ' + director + ', received ' + rating + '/10, and grossed ' + gross_usa
+        imdb_data_set.append(imdb_data)
+        time.sleep(1)
+        count += 1
+        print(count)
+    return imdb_data_set
+
+def pickle_store(list, filename):
+    f = open(filename,'wb')
+    dump(list,f)
+    f.close()
+
+def open_store(filename):
+    f = open(filename, 'rb')
+    movie_data = load(f)
+    f.close()
+    return movie_data
+
+
+
+
+
+
+finder = find_imdb_links(get_links(url,2,500))
+find_data = parse_imdb(finder)
+pickle_store(find_data, 'webpage_text.txt')
+open_store('webpage_text.txt')
