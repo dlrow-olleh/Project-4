@@ -5,10 +5,14 @@ import urllib.request
 from os.path import exists
 import html
 from pickle import dump, load
+from matplotlib import pyplot as plt
 
 links = []
 text = []
 url = 'https://bechdeltest.com/?list=all'
+
+
+#pulls all of the half links from the bechdel test site
 
 def get_links(url, start_line, end_line):
     links = []
@@ -27,6 +31,8 @@ def get_links(url, start_line, end_line):
         if (newlinks[i][0] != 'h'):
             new_links.append(newlinks[i])
     return new_links
+
+#pulls th einformation from these links and sort through it
 
 def download_links(half_links):
     useful_text = []
@@ -47,6 +53,8 @@ def download_links(half_links):
         time.sleep(1)
     return useful_text
 
+# find the html links to the individual imdb links
+
 def find_imdb_links(half_links):
     imdb_links = []
     for i in half_links:
@@ -59,12 +67,15 @@ def find_imdb_links(half_links):
         time.sleep(1)
     return imdb_links
 
+#download and sort through this imdb data and return useful data
+
 def parse_imdb(list):
     imdb_text = []
     count = 0
     imdb_data_set = []
     for i in list:
         webpage = str(urllib.request.urlopen(i).read())
+        # webpage.encode('ascii','ignore')
         imdb_text.append(webpage)
         firstpos = webpage.find(') - IMDb</title>\\n')
         year = webpage[firstpos-4:firstpos]
@@ -105,25 +116,337 @@ def parse_imdb(list):
         time.sleep(1)
         count += 1
         print(count)
+    print(imdb_data_set)
     return imdb_data_set
 
+#pickle this data
+
+data_list = []
+
 def pickle_store(list, filename):
-    f = open(filename,'wb')
+    f = open(filename,'ab')
     dump(list,f)
     f.close()
+
+#reopen pickled data
 
 def open_store(filename):
     f = open(filename, 'rb')
     movie_data = load(f)
     f.close()
-    return movie_data
+    # print(movie_data)
+    data_list.append(movie_data)
+    return data_list
+
+#fixing nested lists
+
+def messy_data_fix(list):
+    flat_list = []
+    flat_list2 = []
+    for i in list:
+        for j in i:
+            flat_list.append(j)
+    for i in flat_list:
+        if i not in flat_list2:
+            flat_list2.append(i)
+    print(flat_list2)
+    return flat_list2
+
+#attempting to scrape the data cleanly, and failing, but it SHOULD work in my mind
+#left this here in case I could get feedback on what I did wrong
+
+def bypass_timeout(num):
+    for i in range(1,num):
+        finder = find_imdb_links(get_links(url,i*200-198,i*200))
+        try:
+            imdb_data_set = parse_imdb(finder)
+        except UnicodeEncodeError:
+            pass
+        pickle_store(imdb_data_set, 'webpage_text.txt')
+        open_store('webpage_text.txt')
+        time.sleep(1)
+    return data_list
+
+
+
+#giving up on the clean way of dealing with little tiny errors, and manually scraping a ton of data
+def dirty_run_code():
+    finder = find_imdb_links(get_links(url,2,200))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text.txt')
+    open_store('webpage_text.txt')
+    time.sleep(1)
+    finder = find_imdb_links(get_links(url,202,290))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text1.txt')
+    open_store('webpage_text1.txt')
+    time.sleep(1)
+    finder = find_imdb_links(get_links(url,402,600))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text2.txt')
+    open_store('webpage_text2.txt')
+    finder = find_imdb_links(get_links(url,602,800))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text3.txt')
+    open_store('webpage_text3.txt')
+    finder = find_imdb_links(get_links(url,802,1000))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text4.txt')
+    open_store('webpage_text4.txt')
+    finder = find_imdb_links(get_links(url,1202,1400))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text6.txt')
+    open_store('webpage_text6.txt')
+    # finder = find_imdb_links(get_links(url,1602,1800))
+    # imdb_data_set = parse_imdb(finder)
+    # pickle_store(imdb_data_set, 'webpage_text.txt7')
+    # open_store('webpage_text.txt7')
+    finder = find_imdb_links(get_links(url,2002,2200))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text8.txt')
+    open_store('webpage_text8.txt')
+    finder = find_imdb_links(get_links(url,2202,2400))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text9.txt')
+    open_store('webpage_text9.txt')
+    finder = find_imdb_links(get_links(url,3000,3200))
+    imdb_data_set = parse_imdb(finder)
+    pickle_store(imdb_data_set, 'webpage_text10.txt')
+    open_store('webpage_text10.txt')
+    slightly_cleaner_data = messy_data_fix(data_list)
+    return slightly_cleaner_data
+
+
+#doing the same thing for the bechdel results
+
+def dirty_run_code2():
+    bechdel_test_results = []
+    finder = download_links(get_links(url,2,200))
+    pickle_store(finder, 'Bechdel_Test_Results1')
+    other_finder1 = open_store('Bechdel_Test_Results1')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,202,400))
+    pickle_store(finder, 'Bechdel_Test_Results2')
+    other_finder1 = open_store('Bechdel_Test_Results2')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,402,600))
+    pickle_store(finder, 'Bechdel_Test_Results3')
+    other_finder1 = open_store('Bechdel_Test_Results3')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,602,800))
+    pickle_store(finder, 'Bechdel_Test_Results4')
+    other_finder1 = open_store('Bechdel_Test_Results4')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,802,1000))
+    pickle_store(finder, 'Bechdel_Test_Results5')
+    other_finder1 = open_store('Bechdel_Test_Results5')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,1202,1400))
+    pickle_store(finder, 'Bechdel_Test_Results6')
+    other_finder1 = open_store('Bechdel_Test_Results6')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,2002,2200))
+    pickle_store(finder, 'Bechdel_Test_Results8')
+    other_finder1 = open_store('Bechdel_Test_Results8')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,2202,2400))
+    pickle_store(finder, 'Bechdel_Test_Results9')
+    other_finder1 = open_store('Bechdel_Test_Results9')
+    bechdel_test_results.append(other_finder1)
+    finder = download_links(get_links(url,3000,3200))
+    pickle_store(finder, 'Bechdel_Test_Results10')
+    other_finder1 = open_store('Bechdel_Test_Results10')
+    bechdel_test_results.append(other_finder1)
+    clean_bechdel = messy_data_fix(bechdel_test_results)
+    return clean_bechdel
+
+#again cleaning up nested lists into a nicer list
+
+def clean_up_bechdel(list):
+    flat_list = []
+    for i in list:
+        for j in i:
+            for k in j:
+                flat_list.append(k)
+    print(flat_list)
+    return flat_list
+
+#loading bechdel data
+
+def load_bechdel():
+    bechdel_results = []
+    text = open_store('Bechdel_Test_Results1')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results2')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results3')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results4')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results5')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results6')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results8')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results9')
+    bechdel_results.append(text)
+    text = open_store('Bechdel_Test_Results10')
+    bechdel_results.append(text)
+    print(bechdel_results)
+    return bechdel_results
+
+
+#loading other scraped info
+
+
+
+def load_regular():
+    regular_results = []
+    text = open_store('webpage_text.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text1.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text2.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text3.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text4.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text6.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text8.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text9.txt')
+    regular_results.append(text)
+    text = open_store('webpage_text10.txt')
+    regular_results.append(text)
+    print(regular_results)
+    return regular_results
+
+#dealing with annoying error cases
+
+
+def data_split():
+    correct_regular = []
+    clean_regular = load_regular()
+    cleaner_regular = clean_up_bechdel(clean_regular)
+    for i in cleaner_regular:
+        if len(i) >= 70:
+            correct_regular.append(i)
+    return correct_regular
+
+data_split()
 
 
 
 
 
+clean_bechdel = load_bechdel()
+cleaner_bechdel = clean_up_bechdel(clean_bechdel)
 
-finder = find_imdb_links(get_links(url,2,500))
-find_data = parse_imdb(finder)
-pickle_store(find_data, 'webpage_text.txt')
-open_store('webpage_text.txt')
+#requesting user input for a customized graph
+
+def ask_user1():
+    print('Would you like to have a side by side comparison of movies that pass and dont pass the Bechdel test, or just one graph?')
+    print('Please input your choice as one of the following strings.')
+    print('"pass", "fail"')
+    bechdel = input()
+    return bechdel
+
+def ask_user2():
+    print('Would you like to compare movies with a y axis of money made or movie rating?')
+    print('Please input your choice as one of the following strings.')
+    print('"grossing", "rating"')
+    yvar = input()
+    return yvar
+
+def ask_user3():
+    print('What color would you like the plot to be?')
+    print('Please input your choice as lowercase version of your color')
+    print('blue, red, etc')
+    color = input()
+    return color
+
+#implementing the graphing portion of our customization
+
+def sweep_bechdel(list):
+    movie_list = []
+    year_list = []
+    rating_list = []
+    gross_list = []
+    test_list = []
+    pass_list = []
+    fail_list = []
+    movie_list_fail = []
+    year_list_fail = []
+    rating_list_fail = []
+    gross_list_fail = []
+    movie_list_pass = []
+    year_list_pass = []
+    rating_list_pass = []
+    gross_list_pass = []
+    count = 0
+    listy = data_split()
+
+    for i in listy:
+        if count <= 9629:
+            firstpos = i.find('(')
+            secondpos = i.find(')')
+            year = i[firstpos+1:secondpos]
+            year_list.append(year)
+            print(year)
+            firstpos = i.find(' (')
+            movie_name = i[:firstpos]
+            print(movie_name)
+            movie_list.append(movie_name)
+            firstpos = i.find('by ')
+            secondpos = i.find(', re')
+            director = i[firstpos+3:secondpos]
+            print(director)
+            firstpos = i.find('ived ')
+            secondpos = i.find('/10')
+            rating = i[firstpos+5:secondpos]
+            rating_list.append(rating)
+            print(rating)
+            firstpos = i.find('$')
+            gross = i[firstpos:]
+            gross_list.append(gross)
+            passorfail = list[count]
+            firstpos = passorfail.find(': ')
+            passorfail = passorfail[firstpos+2:]
+            test_list.append(passorfail)
+            print(passorfail)
+            count += 1
+        else:
+            pass
+    county = 0
+    for i in test_list:
+        if i == 'Failed':
+            fail_list.append(i)
+            year_list_fail.append(year_list[county])
+            rating_list_fail.append(rating_list[county])
+            gross_list_fail.append(gross_list[county])
+            movie_list_fail.append(movie_list[county])
+        else:
+            pass_list.append(i)
+            year_list_pass.append(year_list[county])
+            rating_list_pass.append(rating_list[county])
+            gross_list_pass.append(gross_list[county])
+            movie_list_pass.append(movie_list[county])
+        county += 1
+    if ask_user1() == 'pass':
+        if ask_user2() == 'grossing':
+            plt.plot(year_list_pass, gross_list_pass,ask_user3())
+        elif ask_user2() == 'rating':
+            plt.plot(year_list_pass, rating_list_pass,ask_user3())
+    elif ask_user1() == 'fail':
+        if ask_user2() == 'grossing':
+            plt.plot(year_list_fail, gross_list_pass,ask_user3())
+        elif ask_user2() == 'rating':
+            plt.plot(year_list_fail, rating_list_pass,ask_user3())
+
+
+
+
+sweep_bechdel(cleaner_bechdel)
